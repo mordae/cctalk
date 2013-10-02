@@ -21,15 +21,33 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <asm/termbits.h>
+#include <termios.h>
 #include <sys/fcntl.h>
+
+static int setup_serial_line(int fd)
+{
+	struct termios tio = {
+		.c_cflag = B9600 | CRTSCTS | CS8 | CLOCAL | CREAD,
+		.c_iflag = 0,
+		.c_oflag = 0,
+		.c_lflag = ICANON,
+	};
+
+	if (-1 == tcflush(fd, TCIFLUSH))
+		return -1;
+
+	return tcsetattr(fd, TCSANOW, &tio);
+}
 
 struct cctalk_host *cctalk_host_new(const char *path)
 {
 	struct cctalk_host *host;
 	int fd;
 
-	if (-1 == (fd = open(path, O_RDWR)))
+	if (-1 == (fd = open(path, O_RDWR | O_NOCTTY)))
+		return NULL;
+
+	if (-1 == setup_serial_line(fd))
 		return NULL;
 
 	host = malloc(sizeof(*host));
