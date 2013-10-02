@@ -52,8 +52,6 @@ static int do_help(int argc, char **argv)
 	puts("cctalk [--device=/dev/ttyUSB0] peer-id msg-code arg...");
 	puts("Send request to a ccTalk compatible device.");
 	puts("");
-	puts("Peers are identified ");
-	puts("");
 	puts("ACTIONS:");
 	puts("  --help, -h     Display this help.");
 	puts("  --version, -V  Display version information.");
