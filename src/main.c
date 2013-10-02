@@ -16,6 +16,8 @@
 
 #include "cctalk.h"
 
+#include <error.h>
+#include <errno.h>
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
@@ -27,15 +29,17 @@ static const struct option longopts[] = {
 	{"simple",   0, 0, 's'},
 	{"ccitt",    0, 0, 'c'},
 	{"host-id",  1, 0, 'i'},
+	{"timeout",  1, 0, 't'},
 
 	{0, 0, 0, 0},
 };
 
-static const char optstring[] = "hVd:s:";
+static const char optstring[] = "hVscd:i:t:";
 
 static char *device = NULL;
 static enum cctalk_crc_mode crc_mode = CCTALK_CRC_SIMPLE;
 static uint8_t host_id = 1;
+static int timeout = 1000;
 
 static int do_version(int argc, char **argv)
 {
@@ -57,6 +61,8 @@ static int do_help(int argc, char **argv)
 	puts("OPTIONS:");
 	puts("  --simple, -s   Use the default 8-bit checksums.");
 	puts("  --ccitt, -c    Use 16-bit checksums.");
+	puts("  --timeout, -t 1000");
+	puts("                 Set communication timeout in milliseconds.");
 	puts("  --host-id, -i 1");
 	puts("                 Change address used by the host.");
 	puts("  --device, -d /dev/ttyUSB0");
@@ -68,13 +74,48 @@ static int do_help(int argc, char **argv)
 
 static int do_talk(int argc, char **argv)
 {
-	puts("todo");
+	struct cctalk_message *msg;
+	struct cctalk_host *host;
+	uint8_t fields[257] = {0};
+	int i;
+
+	if (argc < 2)
+		error(1, 0, "not enough parameters specified");
+
+	for (i = 0; i < argc && i < 257; i++)
+		fields[i] = atoi(argv[i]);
+
+	if (NULL == (host = cctalk_host_new(device)))
+		error(1, errno, "failed to open device %s", device);
+
+	host->crc_mode = crc_mode;
+	host->host_id = host_id;
+
+	if (-1 == cctalk_send(host, fields[0], fields[1], argc - 2, fields + 2))
+		error(1, errno, "message could not be sent");
+
+	if (NULL == (msg = cctalk_recv(host)))
+		error(1, errno, "no message received");
+
+	printf("%s: status=%i, source=%i, destination=%i\ndata:",
+	       (msg->header ? "error" : "success"), msg->header,
+	       (crc_mode == CCTALK_CRC_SIMPLE ? msg->source : 1),
+	       msg->destination);
+
+	for (i = 0; i < msg->length; i++)
+		printf(" %i", msg->data[i]);
+
+	printf("\n");
+
+	free(msg);
+	cctalk_host_free(host);
+
 	return 0;
 }
 
 int main(int argc, char **argv)
 {
-	int c, idx = 0;
+	int result, c, idx = 0;
 	int (*action)(int argc, char **argv) = do_talk;
 
 	while (-1 != (c = getopt_long(argc, argv, optstring, longopts, &idx)))
@@ -104,6 +145,10 @@ int main(int argc, char **argv)
 				crc_mode = CCTALK_CRC_CCITT;
 				break;
 
+			case 't':
+				timeout = atoi(optarg);
+				break;
+
 			case '?':
 				return 1;
 		}
@@ -111,5 +156,8 @@ int main(int argc, char **argv)
 	if (NULL == device)
 		device = strdup("/dev/ttyUSB0");
 
-	return action(argc - optind, argv + optind);
+	result = action(argc - optind, argv + optind);
+
+	free(device);
+	return result;
 }
