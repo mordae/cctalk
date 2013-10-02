@@ -24,19 +24,21 @@
 #include <termios.h>
 #include <sys/fcntl.h>
 
+/* Put the serial line into raw mode and discard any pending data. */
 static int setup_serial_line(int fd)
 {
-	struct termios tio = {
-		.c_cflag = B9600 | CRTSCTS | CS8 | CLOCAL | CREAD,
-		.c_iflag = 0,
-		.c_oflag = 0,
-		.c_lflag = ICANON,
-	};
+	struct termios tio = {0};
 
-	if (-1 == tcflush(fd, TCIFLUSH))
+	cfmakeraw(&tio);
+	cfsetspeed(&tio, B9600);
+
+	if (-1 == tcsetattr(fd, TCSANOW, &tio))
 		return -1;
 
-	return tcsetattr(fd, TCSANOW, &tio);
+	if (-1 == tcflush(fd, TCIOFLUSH))
+		return -1;
+
+	return 0;
 }
 
 struct cctalk_host *cctalk_host_new(const char *path)
