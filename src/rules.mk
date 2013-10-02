@@ -2,6 +2,6 @@
 
 bin += cctalk
 
-cctalk = ../lib/libcctalk.so main.c
+cctalk = ../lib/libcctalk.so cctalk.c
 
 # EOF
