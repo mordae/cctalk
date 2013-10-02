@@ -82,10 +82,14 @@ int cctalk_send(struct cctalk_host *host, uint8_t destination,
 		.header = method,
 	};
 
+	uint8_t echobuf[sizeof(header) + length + 1];
+
 	if (CCTALK_CRC_CCITT == host->crc_mode)
 		checksum = crc_16_ccitt(&header, data);
 	else
 		checksum = crc_simple(&header, data);
+
+	/* Write our message to the wire. */
 
 	if (-1 == xwrite(host->fd, &header, sizeof(header), host->timeout))
 		return -1;
@@ -94,6 +98,20 @@ int cctalk_send(struct cctalk_host *host, uint8_t destination,
 		return -1;
 
 	if (-1 == xwrite(host->fd, &checksum, 1, host->timeout))
+		return -1;
+
+	/* Read our own message from the wire. */
+
+	if (-1 == xread(host->fd, echobuf, sizeof(echobuf), host->timeout))
+		return -1;
+
+	if (0 != memcmp(&header, echobuf, sizeof(header)))
+		return -1;
+
+	if (0 != memcmp(data, echobuf + sizeof(header), length))
+		return -1;
+
+	if (echobuf[sizeof(echobuf) - 1] != checksum)
 		return -1;
 
 	return 0;
