@@ -97,7 +97,7 @@ int cctalk_send(struct cctalk_host *host, uint8_t destination,
 	return 0;
 }
 
-struct cctalk_message *cctalk_recv(struct cctalk_host *host, int timeout)
+struct cctalk_message *cctalk_recv(struct cctalk_host *host)
 {
 	struct cctalk_message *msg;
 	struct cctalk_message header;

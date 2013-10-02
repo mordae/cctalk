@@ -214,7 +214,7 @@ int cctalk_send(struct cctalk_host *host, uint8_t destination,
  * Receive single message via given ccTalk host.
  * Returns NULL if no data arrives for more than timeout milliseconds.
  */
-struct cctalk_message *cctalk_recv(struct cctalk_host *host, int timeout);
+struct cctalk_message *cctalk_recv(struct cctalk_host *host);
 
 
 #ifdef __cplusplus
