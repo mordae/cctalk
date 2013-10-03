@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
 
-inc += cctalk.h
+inc += cctalk.h cctalk/host.h cctalk/device.h
 
 # EOF
