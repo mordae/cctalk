@@ -43,7 +43,7 @@ static int timeout = 1000;
 
 static int do_version(int argc, char **argv)
 {
-	puts("cctalk 1");
+	printf("cctalk %s\n", VERSION);
 	return 0;
 }
 
