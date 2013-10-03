@@ -54,7 +54,7 @@ struct cctalk_host *cctalk_host_new(const char *path)
 
 	host = malloc(sizeof(*host));
 	host->fd = fd;
-	host->host_id = 1;
+	host->id = 1;
 	host->crc_mode = CCTALK_CRC_SIMPLE;
 	host->timeout = 1000;
 
@@ -78,7 +78,7 @@ int cctalk_send(struct cctalk_host *host, uint8_t destination,
 	struct cctalk_message header = {
 		.destination = destination,
 		.length = length,
-		.source = host->host_id,
+		.source = host->id,
 		.header = method,
 	};
 

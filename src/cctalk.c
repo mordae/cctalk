@@ -87,7 +87,7 @@ static int do_talk(int argc, char **argv)
 		error(1, errno, "failed to open device %s", device);
 
 	host->crc_mode = crc_mode;
-	host->host_id = host_id;
+	host->id = host_id;
 
 	if (-1 == cctalk_send(host, fields[0], fields[1], argc - 2, fields + 2))
 		error(1, errno, "message could not be sent");

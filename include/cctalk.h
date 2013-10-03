@@ -176,7 +176,7 @@ struct cctalk_host {
 	int fd;
 
 	/* Host identifier. */
-	uint8_t host_id;
+	uint8_t id;
 
 	/* Selected CRC mode to send and to expect. */
 	enum cctalk_crc_mode crc_mode;
