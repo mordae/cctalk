@@ -71,7 +71,7 @@ void cctalk_host_free(struct cctalk_host *host)
 }
 
 int cctalk_send(const struct cctalk_host *host, uint8_t destination,
-                enum cctalk_method method, size_t length, void *data)
+                enum cctalk_method method, void *data, size_t length)
 {
 	uint8_t checksum;
 
@@ -146,4 +146,33 @@ struct cctalk_message *cctalk_recv(const struct cctalk_host *host)
 	memcpy(msg->data, data, header.length + 1);
 
 	return msg;
+}
+
+int cctalk_recv_status(const struct cctalk_host *host)
+{
+	struct cctalk_message *reply;
+
+	if (NULL == (reply = cctalk_recv(host)))
+		return -1;
+
+	int status = reply->header;
+
+	free(reply);
+	return status;
+}
+
+int cctalk_recv_data(const struct cctalk_host *host, uint8_t *buf, size_t len)
+{
+	struct cctalk_message *reply;
+
+	memset(buf, 0, len);
+
+	if (NULL == (reply = cctalk_recv(host)))
+		return -1;
+
+	int status = reply->header;
+	memcpy(buf, reply->data, reply->length <= len ? len : reply->length);
+
+	free(reply);
+	return status;
 }

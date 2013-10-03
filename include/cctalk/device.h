@@ -28,11 +28,18 @@ struct cctalk_device {
 	/* Host this device can be reached through. */
 	const struct cctalk_host *host;
 
+	/* Address to use when communicating with the device. */
+	uint8_t id;
+
 	/* Detected comms version of the device. */
 	uint16_t version;
 
-	/* Address to use when communicating with the device. */
-	uint8_t id;
+	/* Bitmask of acceptable coins. */
+	uint16_t coin_mask;
+
+	/* Detected device features. */
+	unsigned has_master_inhibit_status : 1;
+	unsigned has_inhibit_status : 1;
 };
 
 /* Scan the peer device and prepare above structure.
@@ -43,14 +50,13 @@ struct cctalk_device *cctalk_device_scan(const struct cctalk_host *host,
 /* Free the device structure. */
 void cctalk_device_free(struct cctalk_device *device);
 
-/* Declare some generic methods. */
-#define cctalk_declare_method(name, ...) \
-	struct cctalk_message * \
-	name(const struct cctalk_device *device, ##__VA_ARGS__)
+/*
+ * Make the device accept or reject configured coins.
+ * Returns -1 in case of failure.
+ *
+ * If the device cannot reject coins at all, pretends success.
+ */
+int cctalk_device_set_accept_coins(const struct cctalk_device *dev, int on);
 
-cctalk_declare_method(cctalk_request_comms_revision);
-cctalk_declare_method(cctalk_reset_device);
-cctalk_declare_method(cctalk_modify_inhibit_status, uint16_t mask);
-cctalk_declare_method(cctalk_modify_master_inhibit_status, int on);
 
 #endif				/* !_CCTALK_DEVICE_H */

@@ -18,23 +18,43 @@
 
 #include <stdlib.h>
 
+inline static int detect_support(const struct cctalk_device *dev,
+                                 enum cctalk_method method)
+{
+	if (-1 == cctalk_send(dev->host, dev->id, method, NULL, 0))
+		return 0;
+
+	if (-1 == cctalk_recv_status(dev->host))
+		return 0;
+
+	return 1;
+}
+
+
 struct cctalk_device *cctalk_device_scan(const struct cctalk_host *host,
                                          uint8_t id)
 {
+	uint8_t vers[3] = {0, 0, 0};
+
+	if (-1 == cctalk_send(host, id, 4, NULL, 0))
+		return NULL;
+
+	if (0 != cctalk_recv_data(host, vers, sizeof(vers)))
+		return NULL;
+
+	/* Create the basic device description. */
 	struct cctalk_device *dev = calloc(1, sizeof(*dev));
 	dev->host = host;
 	dev->id = id;
+	dev->version = (vers[1] << 8) | vers[2];
+	dev->coin_mask = 0xffff;
 
-	struct cctalk_message *reply = cctalk_request_comms_revision(dev);
+	dev->has_master_inhibit_status = detect_support(dev, 227) &&
+	                                 detect_support(dev, 228);
 
-	if (NULL == reply || 3 != reply->length) {
-		free(dev);
-		free(reply);
-		return NULL;
-	}
+	dev->has_inhibit_status = detect_support(dev, 230) &&
+	                          detect_support(dev, 231);
 
-	dev->version = (reply->data[1] << 8) | reply->data[2];
-	free(reply);
 	return dev;
 }
 
@@ -46,41 +66,28 @@ void cctalk_device_free(struct cctalk_device *dev)
 	free(dev);
 }
 
-#define cctalk_define_method(name, method) \
-	struct cctalk_message *name(const struct cctalk_device *dev) \
-	{ \
-		if (-1 == cctalk_send(dev->host, dev->id, method, 0, NULL)) \
-			return NULL; \
-		return cctalk_recv(dev->host); \
-	} \
-	struct cctalk_message *name(const struct cctalk_device *dev)
-
-cctalk_define_method(cctalk_request_comms_revision,
-                     CCTALK_METHOD_REQUEST_COMMS_REVISION);
-
-cctalk_define_method(cctalk_reset_device,
-                     CCTALK_METHOD_RESET_DEVICE);
-
-struct cctalk_message *
-cctalk_modify_inhibit_status(const struct cctalk_device *dev, uint16_t mask)
+int cctalk_device_set_accept_coins(const struct cctalk_device *dev, int on)
 {
-	uint8_t data[] = {mask & 0xff, mask >> 8};
+	if (dev->has_master_inhibit_status) {
+		uint8_t data[1] = {on ? 1 : 0};
 
-	enum cctalk_method method = CCTALK_METHOD_MODIFY_INHIBIT_STATUS;
-	if (-1 == cctalk_send(dev->host, dev->id, method, sizeof(data), data))
-		return NULL;
+		if (-1 == cctalk_send(dev->host, dev->id, 228, data, 1))
+			return -1;
 
-	return cctalk_recv(dev->host);
-}
+		return 0 == cctalk_recv_status(dev->host);
+	}
 
-struct cctalk_message *
-cctalk_modify_master_inhibit_status(const struct cctalk_device *dev, int on)
-{
-	uint8_t data[] = {on ? 1 : 0};
+	if (dev->has_inhibit_status) {
+		uint8_t data[2] = {
+			(on ? dev->coin_mask & 0xff : 0),
+			(on ? dev->coin_mask >> 8   : 0),
+		};
 
-	enum cctalk_method method = CCTALK_METHOD_MODIFY_MASTER_INHIBIT_STATUS;
-	if (-1 == cctalk_send(dev->host, dev->id, method, sizeof(data), data))
-		return NULL;
+		if (-1 == cctalk_send(dev->host, dev->id, 231, data, 2))
+			return -1;
 
-	return cctalk_recv(dev->host);
+		return 0 == cctalk_recv_status(dev->host);
+	}
+
+	return 0;
 }

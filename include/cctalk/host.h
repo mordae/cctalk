@@ -207,13 +207,22 @@ void cctalk_host_free(struct cctalk_host *host);
 
 /* Send message via given ccTalk host. */
 int cctalk_send(const struct cctalk_host *host, uint8_t destination,
-                enum cctalk_method method, size_t length, void *data);
+                enum cctalk_method method, void *data, size_t length);
 
 /*
  * Receive single message via given ccTalk host.
  * Returns NULL if no data arrives for more than timeout milliseconds.
  */
 struct cctalk_message *cctalk_recv(const struct cctalk_host *host);
+
+/* Receive message and return it's status.
+ * Returns -1 if no data arrives for more than timeout milliseconds. */
+int cctalk_recv_status(const struct cctalk_host *host);
+
+/* Receive message data and return it's status.
+ * Returns -1 if no data arrives for more than timeout milliseconds.
+ * If fewer than requested bytes arrives, buffer is nil padded. */
+int cctalk_recv_data(const struct cctalk_host *host, uint8_t *buf, size_t len);
 
 
 #endif				/* !_CCTALK_HOST_H */
