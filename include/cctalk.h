@@ -207,14 +207,14 @@ struct cctalk_host *cctalk_host_new(const char *path);
 void cctalk_host_free(struct cctalk_host *host);
 
 /* Send message via given ccTalk host. */
-int cctalk_send(struct cctalk_host *host, uint8_t destination,
+int cctalk_send(const struct cctalk_host *host, uint8_t destination,
                 enum cctalk_method method, size_t length, void *data);
 
 /*
  * Receive single message via given ccTalk host.
  * Returns NULL if no data arrives for more than timeout milliseconds.
  */
-struct cctalk_message *cctalk_recv(struct cctalk_host *host);
+struct cctalk_message *cctalk_recv(const struct cctalk_host *host);
 
 
 #ifdef __cplusplus

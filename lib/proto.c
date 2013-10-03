@@ -70,7 +70,7 @@ void cctalk_host_free(struct cctalk_host *host)
 	free(host);
 }
 
-int cctalk_send(struct cctalk_host *host, uint8_t destination,
+int cctalk_send(const struct cctalk_host *host, uint8_t destination,
                 enum cctalk_method method, size_t length, void *data)
 {
 	uint8_t checksum;
@@ -117,7 +117,7 @@ int cctalk_send(struct cctalk_host *host, uint8_t destination,
 	return 0;
 }
 
-struct cctalk_message *cctalk_recv(struct cctalk_host *host)
+struct cctalk_message *cctalk_recv(const struct cctalk_host *host)
 {
 	struct cctalk_message *msg;
 	struct cctalk_message header;
