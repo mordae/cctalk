@@ -66,28 +66,43 @@ void cctalk_device_free(struct cctalk_device *dev)
 	free(dev);
 }
 
+static int set_master_inhibit_status(const struct cctalk_device *dev, int on)
+{
+	uint8_t data[1] = {on ? 1 : 0};
+
+	if (-1 == cctalk_send(dev->host, dev->id, 228, data, 1))
+		return -1;
+
+	return 0 == cctalk_recv_status(dev->host);
+}
+
+static int set_inhibit_status(const struct cctalk_device *dev, uint16_t mask)
+{
+	uint8_t data[2] = {mask & 0xff, mask >> 8};
+
+	if (-1 == cctalk_send(dev->host, dev->id, 231, data, 2))
+		return -1;
+
+	return 0 == cctalk_recv_status(dev->host);
+}
+
 int cctalk_device_set_accept_coins(const struct cctalk_device *dev, int on)
 {
-	if (dev->has_master_inhibit_status) {
-		uint8_t data[1] = {on ? 1 : 0};
+	if (dev->has_master_inhibit_status)
+		return set_master_inhibit_status(dev, on);
 
-		if (-1 == cctalk_send(dev->host, dev->id, 228, data, 1))
-			return -1;
+	if (dev->has_inhibit_status)
+		return set_inhibit_status(dev, on ? dev->coin_mask : 0x0000);
 
-		return 0 == cctalk_recv_status(dev->host);
-	}
+	return 0;
+}
 
-	if (dev->has_inhibit_status) {
-		uint8_t data[2] = {
-			(on ? dev->coin_mask & 0xff : 0),
-			(on ? dev->coin_mask >> 8   : 0),
-		};
+int cctalk_device_set_coin_mask(struct cctalk_device *dev, uint16_t mask)
+{
+	dev->coin_mask = mask;
 
-		if (-1 == cctalk_send(dev->host, dev->id, 231, data, 2))
-			return -1;
-
-		return 0 == cctalk_recv_status(dev->host);
-	}
+	if (dev->has_inhibit_status)
+		return set_inhibit_status(dev, mask);
 
 	return 0;
 }

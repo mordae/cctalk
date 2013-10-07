@@ -51,12 +51,16 @@ struct cctalk_device *cctalk_device_scan(const struct cctalk_host *host,
 void cctalk_device_free(struct cctalk_device *device);
 
 /*
- * Make the device accept or reject configured coins.
+ * Make the device accept or reject coins in general.
  * Returns -1 in case of failure.
  *
  * If the device cannot reject coins at all, pretends success.
  */
 int cctalk_device_set_accept_coins(const struct cctalk_device *dev, int on);
+
+/* Change set of acceptable coins.
+ * If the device does not support masking coins, pretends success. */
+int cctalk_device_set_coin_mask(struct cctalk_device *dev, uint16_t mask);
 
 
 #endif				/* !_CCTALK_DEVICE_H */
