@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+#include "cctalk/enum.h"
 #include "cctalk/host.h"
 #include "cctalk/device.h"
 

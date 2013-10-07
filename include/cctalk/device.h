@@ -21,6 +21,7 @@
 # error "This file cannot be included directly, include <cctalk.h> instead."
 #endif
 
+#include "enum.h"
 #include "host.h"
 
 /* Specific peer device. */
@@ -42,6 +43,24 @@ struct cctalk_device {
 	unsigned has_inhibit_status : 1;
 };
 
+/* Information about last 5 inserted coins. */
+struct cctalk_credit_info {
+	/* Sequence number starting with 0 on power up,
+	 * looped from 255 to 1 on overflow. */
+	uint8_t seq;
+
+	struct {
+		/* Index of the inserted coin or 0 for error. */
+		uint8_t value;
+
+		/* Sorter path or 0 if not supported. */
+		uint8_t sorter;
+
+		/* Acceptor error code if failed. */
+		enum cctalk_acceptor_error error;
+	} coins[5];
+};
+
 /* Scan the peer device and prepare above structure.
  * You may not free the host before the device. */
 struct cctalk_device *cctalk_device_scan(const struct cctalk_host *host,
@@ -61,6 +80,10 @@ int cctalk_device_set_accept_coins(const struct cctalk_device *dev, int on);
 /* Change set of acceptable coins.
  * If the device does not support masking coins, pretends success. */
 int cctalk_device_set_coin_mask(struct cctalk_device *dev, uint16_t mask);
+
+/* Query credits / errors status. */
+int cctalk_device_query_credits(const struct cctalk_device *dev,
+                                struct cctalk_credit_info *info);
 
 
 #endif				/* !_CCTALK_DEVICE_H */

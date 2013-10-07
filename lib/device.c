@@ -106,3 +106,26 @@ int cctalk_device_set_coin_mask(struct cctalk_device *dev, uint16_t mask)
 
 	return 0;
 }
+
+int cctalk_device_query_credits(const struct cctalk_device *dev,
+                                struct cctalk_credit_info *info)
+{
+	uint8_t result[11] = {0};
+	size_t i;
+
+	if (-1 == cctalk_send(dev->host, dev->id, 229, NULL, 0))
+		return -1;
+
+	if (0 != cctalk_recv_data(dev->host, result, sizeof(result)))
+		return -1;
+
+	info->seq = result[0];
+
+	for (i = 0; i < 5; i++) {
+		info->coins[i].value  = result[1 + 2 * i];
+		info->coins[i].sorter = result[2 + 2 * i];
+		info->coins[i].error  = result[2 + 2 * i];
+	}
+
+	return 0;
+}
