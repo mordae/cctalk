@@ -89,7 +89,7 @@ static int do_talk(int argc, char **argv)
 	host->crc_mode = crc_mode;
 	host->id = host_id;
 
-	if (-1 == cctalk_send(host, fields[0], fields[1], argc - 2, fields + 2))
+	if (-1 == cctalk_send(host, fields[0], fields[1], fields + 2, argc - 2))
 		error(1, errno, "message could not be sent");
 
 	if (NULL == (msg = cctalk_recv(host)))
